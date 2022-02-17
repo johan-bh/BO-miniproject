@@ -1,6 +1,43 @@
+import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.neighbors import KNeighborsClassifier
+import GPyOpt
+from load_MNIST import load_MNIST
+from torchvision import datasets
+from keras.datasets import mnist
+from keras.utils import np_utils
+from sklearn import preprocessing
+
+# Load data from keras
+(X_train, y_train), (X_test, y_test) = mnist.load_data()
+## we use a mask to selects those subsets
+train_filter = np.isin(y_train, [3, 5, 8, 9])
+test_filter = np.isin(y_test, [3, 5, 8, 9])
+
+# apply the mask to the entire dataset
+Xtrain, ytrain = X_train[train_filter], y_train[train_filter]
+Xtest, ytest = X_test[test_filter], y_test[test_filter]
+print(np.shape(Xtrain))
+# Image size = input dims
+input_dim =  X_train.shape[1] * X_train.shape[2]
+
+# Reshape data to match NN
+X_train = X_train.reshape(X_train.shape[0], input_dim).astype('float32')
+X_test = X_test.reshape(X_test.shape[0], input_dim).astype('float32')
+
+# Normalize train and test data
+X_train = preprocessing.normalize(X_train)
+X_test = preprocessing.normalize(X_test)
+
+# One-out-of-K encoding
+y_train = np_utils.to_categorical(y_train)
+y_test = np_utils.to_categorical(y_test)
+num_feature = y_test.shape[1]
+
+
+#Xtrain, ytrain, Xtest, ytest = load_MNIST()
 ## define the domain of the considered parameters
-n_neighbours = tuple(np.arange(1,10,1, dtype= np.int))
+n_neighbors = tuple(np.arange(1,10,1, dtype= np.int))
 # print(n_estimators)
 weights = (0, 1)
 # max_features = ('log2', 'sqrt', None)
@@ -8,11 +45,12 @@ algorithm = (0, 1, 2)
 # criterion = ('gini', 'entropy')
 p = tuple(np.arange(1,10,1, dtype = np.int))
 
-domain = [{'name': 'n_neighbours', 'type': 'discrete', 'domain':n_neighbours},
+domain = [{'name': 'n_neighbors', 'type': 'discrete', 'domain':n_neighbors},
           {'name': 'weights', 'type': 'categorical', 'domain': weights},
           {'name': 'algorithm', 'type': 'categorical', 'domain': algorithm},
           {'name': 'p', 'type': 'discrete', 'domain': p}]
 
+print("Domain defined")
 
 def objective_function(x):
     # print(x)
@@ -34,22 +72,22 @@ def objective_function(x):
         algorithm = 'brute'
 
     # create the model
-    model = KNeighborsClassifier(n_neigbours=int(param[0]), weights=weight, algorithm=algorithm, p=int(param[3]))
+    model = KNeighborsClassifier(n_neighbors=int(param[0]), weights=weight, algorithm=algorithm, p=int(param[3]))
 
     # fit the model
-    model.fit(Xtrain, ytrain)
-    print(model.score)
-    return - model.score
+    model.fit(X_train, y_train)
+    print(model.score(X_train, y_train))
+    return - model.score(X_train, y_train)
 
 opt = GPyOpt.methods.BayesianOptimization(f = objective_function,   # function to optimize
                                               domain = domain,         # box-constrains of the problem
                                               acquisition_type = 'EI' ,      # Select acquisition function MPI, EI, LCB
                                              )
-
+print("Opt defined")
 opt.acquisition.exploration_weight=0.5
-
+print("exploration weight set")
 opt.run_optimization(max_iter = 15)
-
+print("Optimization done")
 x_best = opt.X[np.argmin(opt.Y)]
 print("The best parameters obtained: n_neighbours =" + str(x_best[0]) + ", weight =" + str(x_best[1]) + ", algorithm =" + str(
     x_best[2])  + ", p =" + str(
@@ -63,7 +101,7 @@ y_bo = np.maximum.accumulate(-opt.Y).ravel()
 # define iteration number
 xs = np.arange(1,21,1)
 
-plt.plot(xs, max_scoree, 'o-', color = 'red', label='Random Search')
+plt.plot(xs, max_score, 'o-', color = 'red', label='Random Search')
 plt.plot(xs, y_bo, 'o-', color = 'blue', label='Bayesian Optimization')
 plt.legend()
 plt.xlabel('Iterations')
