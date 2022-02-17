@@ -10,6 +10,8 @@ import random
 np.random.seed(32)
 random.seed(32)
 
+print("Success!")
+
 def load_MNIST():
     '''
     Function to load the MNIST training and test set with corresponding labels.
