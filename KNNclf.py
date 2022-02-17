@@ -84,6 +84,7 @@ opt = GPyOpt.methods.BayesianOptimization(f = objective_function,   # function t
                                               acquisition_type = 'EI' ,      # Select acquisition function MPI, EI, LCB
                                              )
 print("Opt defined")
+#set weight
 opt.acquisition.exploration_weight=0.5
 print("exploration weight set")
 opt.run_optimization(max_iter = 15)
