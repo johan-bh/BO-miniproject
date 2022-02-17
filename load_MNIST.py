@@ -6,6 +6,8 @@ def load_MNIST():
     '''
 
     # we want to flat the examples
+    from torchvision import datasets
+    import numpy
 
     training_set = datasets.MNIST(root='./data', train=True, download=True, transform= None)
     test_set = datasets.MNIST(root='./data', train=False, download=True, transform= None)
