@@ -19,5 +19,3 @@ def load_MNIST():
     ytest = test_set.targets.numpy()
 
     return Xtrain, ytrain, Xtest, ytest
-
-# LOL
