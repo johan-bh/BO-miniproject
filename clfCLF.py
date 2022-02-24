@@ -22,8 +22,11 @@ Xtrain, ytrain, Xtest, ytest = load_MNIST()
 train_filter = np.isin(ytrain, [3, 5, 8])
 test_filter = np.isin(ytest, [3, 5, 8])
 
+ran = np.random.randint(0,17402,3000)
+Xtrain, ytrain = Xtrain[train_filter][ran], ytrain[train_filter][ran]
+
 # apply the mask to the entire dataset
-Xtrain, ytrain = Xtrain[train_filter], ytrain[train_filter]
+#Xtrain, ytrain = Xtrain[train_filter], ytrain[train_filter]
 Xtest, ytest = Xtest[test_filter], ytest[test_filter]
 print(np.shape(Xtrain))
 print(np.shape(ytrain))
