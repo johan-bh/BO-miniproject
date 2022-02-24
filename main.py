@@ -23,7 +23,6 @@ y_train = np_utils.to_categorical(y_train)
 y_test = np_utils.to_categorical(y_test)
 num_feature = y_test.shape[1]
 
-#
 def Simple_NN():
     model = Sequential()
     model.add(Dense(input_dim, input_dim=input_dim, kernel_initializer='normal', activation='relu'))
