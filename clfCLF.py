@@ -22,11 +22,19 @@ Xtrain, ytrain, Xtest, ytest = load_MNIST()
 train_filter = np.isin(ytrain, [3, 5, 8])
 test_filter = np.isin(ytest, [3, 5, 8])
 
+<<<<<<< HEAD
 ran = np.random.randint(0,17402,6000)
 Xtrain, ytrain = Xtrain[train_filter][ran], ytrain[train_filter][ran]
 
 # apply the mask to the entire dataset
 # Xtrain, ytrain = Xtrain[train_filter], ytrain[train_filter]
+=======
+ran = np.random.randint(0,17402,3000)
+Xtrain, ytrain = Xtrain[train_filter][ran], ytrain[train_filter][ran]
+
+# apply the mask to the entire dataset
+#Xtrain, ytrain = Xtrain[train_filter], ytrain[train_filter]
+>>>>>>> 80dab346ddd4271f4642f7978e8da7d466b24cfa
 Xtest, ytest = Xtest[test_filter], ytest[test_filter]
 print(np.shape(Xtrain))
 print(np.shape(ytrain))
@@ -108,7 +116,11 @@ def objective_function(x):
 
     # create the model
 
+<<<<<<< HEAD
     model = AdaBoostClassifier(n_estimators=int(param[0]), learning_rate=param[1],
+=======
+    model = AdaBoostClassifier(n_estimators=param[0], learning_rate=param[1],
+>>>>>>> 80dab346ddd4271f4642f7978e8da7d466b24cfa
                                algorithm=algorithm, random_state=random_state)
 
     # fit the model
