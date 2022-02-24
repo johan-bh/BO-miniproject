@@ -105,7 +105,7 @@ def objective_function(x):
 
     # create the model
 
-    model = AdaBoostClassifier(n_estimators=int(param[0]), learning_rate=float(param[1]),
+    model = AdaBoostClassifier(n_estimators=param[0], learning_rate=param[1],
                                algorithm=algorithm, random_state=random_state)
 
     # fit the model
