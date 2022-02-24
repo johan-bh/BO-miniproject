@@ -1,4 +1,5 @@
 def load_MNIST():
+    from torchvision import datasets
     '''
     Function to load the MNIST training and test set with corresponding labels.
 
