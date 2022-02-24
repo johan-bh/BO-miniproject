@@ -22,8 +22,11 @@ Xtrain, ytrain, Xtest, ytest = load_MNIST()
 train_filter = np.isin(ytrain, [3, 5, 8])
 test_filter = np.isin(ytest, [3, 5, 8])
 
+ran = np.random.randint(0,17402,6000)
+Xtrain, ytrain = Xtrain[train_filter][ran], ytrain[train_filter][ran]
+
 # apply the mask to the entire dataset
-Xtrain, ytrain = Xtrain[train_filter], ytrain[train_filter]
+# Xtrain, ytrain = Xtrain[train_filter], ytrain[train_filter]
 Xtest, ytest = Xtest[test_filter], ytest[test_filter]
 print(np.shape(Xtrain))
 print(np.shape(ytrain))
@@ -71,7 +74,7 @@ for params in param_list:
 ## define the domain of the considered parameters
 n_estimators = tuple(np.arange(5, 95, 5, dtype=np.int))
 # print(n_estimators)
-learning_rate=range(0.1, 1.5, 0.2)
+learning_rate=np.linspace(1e-5,1e-2,6)
 # algorithm = ("SAMME", "SAMME.R")
 algorithm = (0, 1)
 # random_state = (32, None)
@@ -105,7 +108,7 @@ def objective_function(x):
 
     # create the model
 
-    model = AdaBoostClassifier(n_estimators=int(param[0]), learning_rate=float(param[1]),
+    model = AdaBoostClassifier(n_estimators=int(param[0]), learning_rate=param[1],
                                algorithm=algorithm, random_state=random_state)
 
     # fit the model
