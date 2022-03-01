@@ -22,19 +22,11 @@ Xtrain, ytrain, Xtest, ytest = load_MNIST()
 train_filter = np.isin(ytrain, [3, 5, 8])
 test_filter = np.isin(ytest, [3, 5, 8])
 
-<<<<<<< HEAD
-ran = np.random.randint(0,17402,6000)
-Xtrain, ytrain = Xtrain[train_filter][ran], ytrain[train_filter][ran]
+# ran = np.random.randint(0,17402,3000)
+# Xtrain, ytrain = Xtrain[train_filter][ran], ytrain[train_filter][ran]
 
 # apply the mask to the entire dataset
-# Xtrain, ytrain = Xtrain[train_filter], ytrain[train_filter]
-=======
-ran = np.random.randint(0,17402,3000)
-Xtrain, ytrain = Xtrain[train_filter][ran], ytrain[train_filter][ran]
-
-# apply the mask to the entire dataset
-#Xtrain, ytrain = Xtrain[train_filter], ytrain[train_filter]
->>>>>>> 80dab346ddd4271f4642f7978e8da7d466b24cfa
+Xtrain, ytrain = Xtrain[train_filter], ytrain[train_filter]
 Xtest, ytest = Xtest[test_filter], ytest[test_filter]
 print(np.shape(Xtrain))
 print(np.shape(ytrain))
@@ -82,7 +74,7 @@ for params in param_list:
 ## define the domain of the considered parameters
 n_estimators = tuple(np.arange(5, 95, 5, dtype=np.int))
 # print(n_estimators)
-learning_rate=np.linspace(1e-5,1e-2,6)
+learning_rate=np.linspace(1e-5,1e-2,3)
 # algorithm = ("SAMME", "SAMME.R")
 algorithm = (0, 1)
 # random_state = (32, None)
@@ -116,11 +108,7 @@ def objective_function(x):
 
     # create the model
 
-<<<<<<< HEAD
     model = AdaBoostClassifier(n_estimators=int(param[0]), learning_rate=param[1],
-=======
-    model = AdaBoostClassifier(n_estimators=param[0], learning_rate=param[1],
->>>>>>> 80dab346ddd4271f4642f7978e8da7d466b24cfa
                                algorithm=algorithm, random_state=random_state)
 
     # fit the model
@@ -153,7 +141,7 @@ plt.plot(xs, max_score_per_iteration, 'o-', color = 'red', label='Random Search'
 plt.plot(xs, y_bo, 'o-', color = 'blue', label='Bayesian Optimization')
 plt.legend()
 plt.xlabel('Iterations')
-plt.ylabel('Out of bag error')
+plt.ylabel('Accuracy Score')
 plt.title('Comparison between Random Search and Bayesian Optimization')
 plt.show()
 
