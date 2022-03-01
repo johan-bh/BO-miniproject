@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import GPyOpt
+from sklearn.linear_model import LogisticRegression
 from torchvision import datasets, transforms, utils
 from sklearn.model_selection import ParameterSampler, RandomizedSearchCV, cross_val_score
 from scipy.stats import uniform
@@ -22,21 +23,21 @@ Xtrain, ytrain, Xtest, ytest = load_MNIST()
 train_filter = np.isin(ytrain, [3, 5, 8])
 test_filter = np.isin(ytest, [3, 5, 8])
 
-# ran = np.random.randint(0,17402,3000)
-# Xtrain, ytrain = Xtrain[train_filter][ran], ytrain[train_filter][ran]
+ran = np.random.randint(0,17402,200)
+Xtrain, ytrain = Xtrain[train_filter][ran], ytrain[train_filter][ran]
 
 # apply the mask to the entire dataset
-Xtrain, ytrain = Xtrain[train_filter], ytrain[train_filter]
+# Xtrain, ytrain = Xtrain[train_filter], ytrain[train_filter]
 Xtest, ytest = Xtest[test_filter], ytest[test_filter]
 print(np.shape(Xtrain))
 print(np.shape(ytrain))
 
-model = AdaBoostClassifier(n_estimators=100)
+model = LogisticRegression()
 model.fit(Xtrain, ytrain)
 print(model)
 # hyperparams dictionary
-domain = dict(n_estimators=range(5, 95, 5), learning_rate=range(1, 2), algorithm=["SAMME", "SAMME.R"],
-              random_state=[32, None])
+domain = dict(penalty=["l2", "none"], C=range(10, 60, 10), solver=["newton-cg", "lbfgs", "sag", "saga"],
+              fit_intercept=[True, False], max_iter = range(100,1000,100))
 # rs = RandomizedSearchCV(model, param_distributions=domain, cv=3, verbose =2, n_iter=10)
 # rs.fit(Xtrain, ytrain)
 
@@ -55,8 +56,11 @@ import time
 for params in param_list:
     print(i)
     print(params)
-    model = AdaBoostClassifier(n_estimators=params['n_estimators'], learning_rate=params['learning_rate'],
-                               algorithm=params['algorithm'],random_state=params['random_state'])
+    model = LogisticRegression(fit_intercept=params["fit_intercept"],
+                        penalty=params["penalty"],
+                        solver=params["solver"],
+                        max_iter=params["max_iter"],
+                        C=params["C"])
 
     start = time.time()
     model.fit(Xtrain, ytrain)
@@ -72,19 +76,16 @@ for params in param_list:
     print(f'It took {end - start} seconds')
 
 ## define the domain of the considered parameters
-n_estimators = tuple(np.arange(5, 95, 5, dtype=np.int))
+C = np.linspace(1e-10,1e10,20)
 # print(n_estimators)
-learning_rate=np.linspace(1e-5,1e-2,3)
-# algorithm = ("SAMME", "SAMME.R")
-algorithm = (0, 1)
-# random_state = (32, None)
-random_state = (0, 1)
+max_iter = np.linspace(100,1000,100)
 
 # define the dictionary for GPyOpt
-domain = [{'name': 'n_estimators', 'type': 'discrete', 'domain': n_estimators},
-          {'name': 'learning_rate', 'type': 'discrete', 'domain': learning_rate},
-          {'name': 'algorithm', 'type': 'categorical', 'domain': algorithm},
-          {'name': 'random_state', 'type': 'categorical', 'domain': random_state}]
+domain = [{'name': 'penalty', 'type': 'categorical', 'domain': (0,1)},
+          {'name': 'C', 'type': 'discrete', 'domain': C},
+          {'name': 'fit_intercept', 'type': 'categorical', 'domain': (0,1)},
+          {'name': 'max_iter', 'type': 'discrete', 'domain': max_iter},
+          {'name': 'solver', 'type': 'categorical', 'domain': (0, 1, 2, 3)}]
 
 ## we have to define the function we want to maximize --> validation accuracy,
 ## note it should take a 2D ndarray but it is ok that it assumes only one point
@@ -94,22 +95,32 @@ def objective_function(x):
     # we have to handle the categorical variables that is convert 0/1 to labels
     # log2/sqrt and gini/entropy
     param = x[0]
-    print(param)
     # we have to handle the categorical variables
-    if param[2] == 0:
-        algorithm = "SAMME"
-    elif param[2] == 1:
-        algorithm = "SAMME.R"
+    if param[0] == 0:
+        penalty = "l2"
+    elif param[0] == 1:
+        penalty = "none"
 
-    if param[3] == 0:
-        random_state = 32
+    if param[2] == 0:
+        fit_intercept = True
     else:
-        random_state = None
+        fit_intercept = False
+
+    if param[4] == 0:
+        solver = "newton-cg"
+    elif param[4] == 1:
+        solver = "lbfgs"
+    elif param[4] == 2:
+        solver = "sag"
+    elif param[4] == 3:
+        solver = "saga"
 
     # create the model
-
-    model = AdaBoostClassifier(n_estimators=int(param[0]), learning_rate=param[1],
-                               algorithm=algorithm, random_state=random_state)
+    model = LogisticRegression(fit_intercept=fit_intercept,
+                        penalty=penalty,
+                        solver=solver,
+                        max_iter=param[3]//1,
+                        C=param[1]//1)
 
     # fit the model
     model.fit(Xtrain, ytrain)
@@ -122,17 +133,24 @@ opt = GPyOpt.methods.BayesianOptimization(f = objective_function,   # function t
                                              )
 opt.acquisition.exploration_weight=0.5
 
-opt.run_optimization(max_iter = 15)
+# opt.run_optimization(max_iter = 20)
+opt.run_optimization(max_iter=15, eps = 1e-12)
 
 x_best = opt.X[np.argmin(opt.Y)]
-print("The best parameters obtained: n_estimators=" + str(x_best[0]) + ", learning_rate=" + str(x_best[1]) + ", algorithm=" + str(
-    x_best[2])  + ", random_state=" + str(
-    x_best[3]))
+# print("The best parameters obtained: n_estimators=" + str(x_best[0]) + ", learning_rate=" + str(x_best[1]) + ", algorithm=" + str(
+#     x_best[2])  + ", random_state=" + str(
+#     x_best[3]))
 
 ## comparison between random search and bayesian optimization
 ## we can plot the maximum oob per iteration of the sequence
 
 # collect the maximum each iteration of BO, note that it is also provided by GPOpt in Y_Best
+print(-opt.Y)
+print(max_score_per_iteration)
+
+
+opt.plot_convergence()
+
 y_bo = np.maximum.accumulate(-opt.Y).ravel()
 # define iteration number
 xs = np.arange(1,21,1)
@@ -142,8 +160,10 @@ plt.plot(xs, y_bo, 'o-', color = 'blue', label='Bayesian Optimization')
 plt.legend()
 plt.xlabel('Iterations')
 plt.ylabel('Accuracy Score')
-plt.title('Comparison between Random Search and Bayesian Optimization')
+plt.title('Random Search Accuracy Score over iterations')
 plt.show()
+
+exit()
 
 #We start by taking a look a the model subclass of our Bayesian optimization object
 print(opt.model.input_dim)
