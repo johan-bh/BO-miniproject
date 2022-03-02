@@ -20,10 +20,10 @@ random.seed(32)
 Xtrain, ytrain, Xtest, ytest = load_MNIST()
 
 ## we use a mask to selects those subsets
-train_filter = np.isin(ytrain, [3, 5, 8])
-test_filter = np.isin(ytest, [3, 5, 8])
+train_filter = np.isin(ytrain, [3, 4, 5, 7, 8])
+test_filter = np.isin(ytest, [3, 4, 5, 7, 8])
 
-ran = np.random.randint(0,17402,200)
+ran = np.random.randint(0,17402,400)
 Xtrain, ytrain = Xtrain[train_filter][ran], ytrain[train_filter][ran]
 
 # apply the mask to the entire dataset
