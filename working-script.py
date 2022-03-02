@@ -40,11 +40,11 @@ train_filter = np.isin(ytrain, [3, 5, 8, 9])
 test_filter = np.isin(ytest, [3, 5, 8, 9])
 
 # Random Slice
-ran = np.random.randint(0,17402,200)
-Xtrain, ytrain = Xtrain[train_filter][ran], ytrain[train_filter][ran]
+# ran = np.random.randint(0,17402,200)
+# Xtrain, ytrain = Xtrain[train_filter][ran], ytrain[train_filter][ran]
 
 # apply the mask to the entire dataset
-# Xtrain, ytrain = Xtrain[train_filter], ytrain[train_filter]
+Xtrain, ytrain = Xtrain[train_filter], ytrain[train_filter]
 Xtest, ytest = Xtest[test_filter], ytest[test_filter]
 
 # print some information
@@ -152,6 +152,7 @@ def objective_function(x):
 #### Acquisition Functions ####
 acquisition_functions = ["EI", "MPI", "LCB"]
 y_bos = {}
+opt_params = {}
 
 for acquisition_function in acquisition_functions:
 
@@ -164,6 +165,8 @@ for acquisition_function in acquisition_functions:
     opt.run_optimization(max_iter = 16) 
 
     x_best = opt.X[np.argmin(opt.Y)]
+    opt_params[acquisition_function] = {"n_estimators":str(x_best[0]), "max_depth": str(x_best[1]), "max_features": str(x_best[2]),
+                                        "criterion":str(x_best[3])}
     print("The best parameters obtained: n_estimators=" + str(x_best[0]) + ", max_depth=" + str(x_best[1]) + ", max_features=" + str(
         x_best[2])  + ", criterion=" + str(
         x_best[3]))
@@ -183,15 +186,25 @@ while len(y_bos["MPI"]) != len(xs):
 while len(y_bos["LCB"]) != len(xs):
     y_bos["LCB"] = np.append(y_bos["LCB"], y_bos["LCB"][-1])
 
+print("EI: \n",", ".join(opt_params["EI"].values()))
+print("MPI: \n",", ".join(opt_params["MPI"].values()))
+print("LCB: \n",", ".join(opt_params["LCB"].values()))
+
+print("EI performance: ",y_bos["EI"])
+print("MPI performance: ",y_bos["MPI"])
+print("LCB performance: ",y_bos["LCB"])
+
 plt.plot(xs, max_oob_per_iteration, 'o-', color = 'red', label='Random Search')
 plt.plot(xs, y_bos["EI"], 'o-', color = 'blue', label='Bayesian Optimization using EI')
 plt.plot(xs, y_bos["MPI"], 'o-', color = 'green', label='Bayesian Optimization using MPI')
 plt.plot(xs, y_bos["LCB"], 'o-', color = 'magenta', label='Bayesian Optimization using LCB')
 plt.legend()
 plt.xlabel('Iterations')
-plt.ylabel('Out of bag error')
+plt.ylabel('Inverse Out of bag error')
 plt.title('Comparison between Random Search and Bayesian Optimization')
 plt.show()
+
+exit()
 
 #We start by taking a look a the model subclass of our Bayesian optimization object
 print(opt.model.input_dim)
