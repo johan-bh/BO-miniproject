@@ -36,12 +36,16 @@ def load_MNIST():
 Xtrain, ytrain, Xtest, ytest = load_MNIST()
 
 ## we use a mask to selects those subsets
-#train_filter = np.isin(ytrain, [3, 5, 8, 9])
-#test_filter = np.isin(ytest, [3, 5, 8, 9])
+train_filter = np.isin(ytrain, [3, 5, 8, 9])
+test_filter = np.isin(ytest, [3, 5, 8, 9])
+
+# Random Slice
+ran = np.random.randint(0,17402,200)
+Xtrain, ytrain = Xtrain[train_filter][ran], ytrain[train_filter][ran]
 
 # apply the mask to the entire dataset
-#Xtrain, ytrain = Xtrain[train_filter], ytrain[train_filter]
-#Xtest, ytest = Xtest[test_filter], ytest[test_filter]
+# Xtrain, ytrain = Xtrain[train_filter], ytrain[train_filter]
+Xtest, ytest = Xtest[test_filter], ytest[test_filter]
 
 # print some information
 print('Information about the new datasets')
@@ -64,7 +68,7 @@ domain = {"n_estimators": range(1, 101),
 #rs.fit(Xtrain, ytrain)
 
 # create the ParameterSampler
-param_list = list(ParameterSampler(domain, n_iter=20, random_state=32))
+param_list = list(ParameterSampler(domain, n_iter=21, random_state=32))
 print('Param list')
 print(param_list)
 #rounded_list = [dict((k,v) for (k, v) in d.items()) for d in param_list]
@@ -82,13 +86,13 @@ i = 0
 for params in param_list:
     print(i)
     print(params)
-    model = RandomForestClassifier(n_estimators= params['n_estimators'], criterion = params['criterion'], 
+    base_model = RandomForestClassifier(n_estimators= params['n_estimators'], criterion = params['criterion'], 
                            max_depth = params['max_depth'], max_features = params['max_features'], oob_score=True, n_jobs=-1)
 
     start = time.time()
-    model.fit(Xtrain, ytrain)
+    base_model.fit(Xtrain, ytrain)
     end = time.time()
-    model_oob = model.oob_score_
+    model_oob = base_model.oob_score_
     print('OOB found:', model_oob)
     if model_oob > current_best_oob:
         current_best_oob = model_oob
@@ -157,7 +161,7 @@ for acquisition_function in acquisition_functions:
                                                 )
     opt.acquisition.exploration_weight=0.5
 
-    opt.run_optimization(max_iter = 15) 
+    opt.run_optimization(max_iter = 16) 
 
     x_best = opt.X[np.argmin(opt.Y)]
     print("The best parameters obtained: n_estimators=" + str(x_best[0]) + ", max_depth=" + str(x_best[1]) + ", max_features=" + str(
@@ -170,12 +174,19 @@ for acquisition_function in acquisition_functions:
     # collect the maximum each iteration of BO, note that it is also provided by GPOpt in Y_Best
     y_bos[acquisition_function] = np.maximum.accumulate(-opt.Y).ravel()
 # define iteration number
-xs = np.arange(1,21,1)
+xs = np.arange(1,22,1)
+
+while len(y_bos["EI"]) != len(xs):
+    y_bos["EI"] = np.append(y_bos["EI"], y_bos["EI"][-1])
+while len(y_bos["MPI"]) != len(xs):
+    y_bos["MPI"] = np.append(y_bos["MPI"], y_bos["MPI"][-1])
+while len(y_bos["LCB"]) != len(xs):
+    y_bos["LCB"] = np.append(y_bos["LCB"], y_bos["LCB"][-1])
 
 plt.plot(xs, max_oob_per_iteration, 'o-', color = 'red', label='Random Search')
 plt.plot(xs, y_bos["EI"], 'o-', color = 'blue', label='Bayesian Optimization using EI')
-plt.plot(xs, y_bos["MPI"], 'o-', color = 'blue', label='Bayesian Optimization using MPI')
-plt.plot(xs, y_bos["LCB"], 'o-', color = 'blue', label='Bayesian Optimization using LCB')
+plt.plot(xs, y_bos["MPI"], 'o-', color = 'green', label='Bayesian Optimization using MPI')
+plt.plot(xs, y_bos["LCB"], 'o-', color = 'magenta', label='Bayesian Optimization using LCB')
 plt.legend()
 plt.xlabel('Iterations')
 plt.ylabel('Out of bag error')
@@ -211,4 +222,5 @@ plt.imshow(acq_img.T, origin='lower',extent=[n_feat[0],n_feat[-1],max_d[0],max_d
 plt.colorbar()
 plt.xlabel('n_features')
 plt.ylabel('max_depth')
-plt.title('Acquisition function');
+plt.title('Acquisition function')
+plt.show();
